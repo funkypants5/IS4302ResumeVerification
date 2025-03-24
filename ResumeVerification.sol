@@ -7,13 +7,16 @@ contract ResumeVerification {
         string message;
         uint256 timestamp;
     }
+
     struct Resume {
         string personalInfo;
         string experience;
         string education;
         mapping(address => Endorsement) endorsements;
     }
+
     mapping(address => Resume) public userResumes;
+
     function createResume(
         string memory _personalInfo,
         string memory _experience,
@@ -27,6 +30,7 @@ contract ResumeVerification {
         userResumes[msg.sender].experience = _experience;
         userResumes[msg.sender].education = _education;
     }
+
     function addEndorsement(address _user, string memory _message) public {
         require(
             bytes(userResumes[_user].personalInfo).length > 0,
@@ -38,13 +42,26 @@ contract ResumeVerification {
             block.timestamp
         );
     }
-    function getResume(address _user) public view returns (Resume memory) {
+
+    function getResume(
+        address _user
+    )
+        public
+        view
+        returns (
+            string memory personalInfo,
+            string memory experience,
+            string memory education
+        )
+    {
         require(
             bytes(userResumes[_user].personalInfo).length > 0,
             "Resume does not exist"
         );
-        return userResumes[_user];
+        Resume storage resume = userResumes[_user];
+        return (resume.personalInfo, resume.experience, resume.education);
     }
+
     function getEndorsements(
         address _user
     ) public view returns (Endorsement[] memory) {
@@ -53,18 +70,18 @@ contract ResumeVerification {
             "Resume does not exist"
         );
         uint256 count = 0;
-        for (uint256 i = 0; i < address(this).balance; i++) {
-            // Very bad practice. Don't do this.
-            if (userResumes[_user].endorsements[address(i)].timestamp != 0) {
+        for (uint256 i = 0; i < 2 ** 160; i++) {
+            address endorser = address(uint160(i));
+            if (userResumes[_user].endorsements[endorser].timestamp != 0) {
                 count++;
             }
         }
         Endorsement[] memory result = new Endorsement[](count);
         uint256 index = 0;
-        for (uint256 i = 0; i < address(this).balance; i++) {
-            // Very bad practice. Don't do this.
-            if (userResumes[_user].endorsements[address(i)].timestamp != 0) {
-                result[index] = userResumes[_user].endorsements[address(i)];
+        for (uint256 i = 0; i < 2 ** 160; i++) {
+            address endorser = address(uint160(i));
+            if (userResumes[_user].endorsements[endorser].timestamp != 0) {
+                result[index] = userResumes[_user].endorsements[endorser];
                 index++;
             }
         }
