@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "./VeriToken.sol";
+
 // Minimal ERC20 interface for the VERI token.
 interface IERC20 {
     function transferFrom(address from, address to, uint256 amount) external returns (bool);
@@ -12,7 +14,7 @@ interface IERC20 {
 /// submit verification requests (with a fee), and have those requests updated based on a decentralized voting process.
 /// Employers can view pending requests and also pay to view individual employee resumes.
 contract ResumeVerification {
-    IERC20 public veriToken;
+    VeriToken public veriToken;
     address[] public employers;
     address[] public employees;
     uint256 public verificationRequestCount;
@@ -99,7 +101,7 @@ modifier onlyEmployee() {
     /// @notice Contract constructor
     /// @param _veriToken Address of the VERI token contract.
     constructor(address _veriToken) {
-        veriToken = IERC20(_veriToken);
+        veriToken = VeriToken(_veriToken);
     }
 
     function addEmployer(address _newEmployer) external {
@@ -113,7 +115,7 @@ modifier onlyEmployee() {
     function createResume() external {
         require(!resumes[msg.sender].exists, "Resume already exists.");
         // Charge 1 VERI token from the employee.
-        require(veriToken.transferFrom(msg.sender, address(this), 1), "Token transfer failed.");
+        require(veriToken.erc20Contract().transferFrom(msg.sender, address(this), 1), "Token transfer failed.");
         employees.push(msg.sender);
         
         Resume storage newResume = resumes[msg.sender];
@@ -129,7 +131,7 @@ modifier onlyEmployee() {
     function sendVerificationRequest(string memory content, address employer) external onlyEmployee {
         require(resumes[msg.sender].exists, "You must create a resume first.");
         // Charge 1 VERI token from the employee.
-        require(veriToken.transferFrom(msg.sender, address(this), 1), "Token transfer failed.");
+        require(veriToken.transferVTFrom(msg.sender, address(this), 1), "Token transfer failed.");
 
         verificationRequestCount++;
         verificationRequests[verificationRequestCount] = VerificationRequest({
@@ -187,7 +189,7 @@ modifier onlyEmployee() {
     // If the request is verified, add the entry to the employee's resume and refund the token
     if (newStatus == Status.Verified) {
         // Refund 1 VERI token to the employee
-        require(veriToken.transfer(verificationRequests[requestId].employee, 1), "Refund failed.");
+        require(veriToken.transferVTFrom(msg.sender, verificationRequests[requestId].employee, 1), "Refund failed.");
         Resume storage userResume = resumes[verificationRequests[requestId].employee];
         uint256 entryId = userResume.entries.length + 1;
         
@@ -223,7 +225,7 @@ modifier onlyEmployee() {
     function viewEmployeeResume(address employeeAddr) external onlyEmployer returns (Resume memory) {
         require(resumes[employeeAddr].exists, "Employee resume does not exist.");
         // Charge fee of 1 VERI token from the employer.
-        require(veriToken.transferFrom(msg.sender, address(this), 1), "Token transfer failed.");
+        require(veriToken.transferVTFrom(msg.sender, address(this), 1), "Token transfer failed.");
         emit ResumeViewed(employeeAddr, msg.sender);
         return resumes[employeeAddr];
     }
