@@ -1,245 +1,154 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./VeriToken.sol";
+//first need to approve the address of spender
+// Check the allowance
+// Finally able to call transferFrom to transfer tokens
 
-// Minimal ERC20 interface for the VERI token.
-interface IERC20 {
-    function transferFrom(address from, address to, uint256 amount) external returns (bool);
-    function transfer(address to, uint256 amount) external returns (bool);
-}
+contract ERC20 {
+    // Indicates whether minting has been finished
+    bool public mintingFinished = false;
 
-/// @title ResumeVerification Smart Contract
-/// @notice This contract allows employees to create their resume on-chain,
-/// submit verification requests (with a fee), and have those requests updated based on a decentralized voting process.
-/// Employers can view pending requests and also pay to view individual employee resumes.
-contract ResumeVerification {
-    VeriToken public veriToken;
-    address[] public employers;
-    address[] public employees;
-    uint256 public verificationRequestCount;
+    // Contract owner
+    address public owner = msg.sender;
 
-    // Enumeration for the state of verification requests/resume entries.
-    enum Status { Pending, Verified, Rejected }
-    
-    // Emitted when a new employer is added to the system
-    event EmployerAdded(address indexed newEmployer, address indexed addedBy);
+    // Allowance mapping: owner -> spender -> amount
+    mapping(address => mapping(address => uint256)) private allowed;
+    mapping(address => mapping(address => uint256)) public allowance;
 
-    // Emitted when a new employee is added to the system
-    event EmployeeAdded(address indexed newEmployee);
+    // Balance mapping
+    mapping(address => uint256) private balances;
 
-    // Emitted when a resume is created
-    event ResumeCreated(address indexed employee);
+    // Token metadata
+    string public constant name = "VeriToken"; // Token name
+    string public constant symbol = "VT"; // Token symbol
+    uint8 public constant decimals = 18; // Token decimals
+    uint256 private totalSupply_; // Total supply of the token
 
-    // Emitted when a resume entry is verified and added
-    event ResumeEntryVerified(
-    address indexed employee, 
-    uint256 indexed entryId, 
-    address indexed employer
-    );
+    // Events
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Mint(address indexed to, uint256 amount);
+    event MintFinished();
+    event Burn(address indexed from, uint256 value);
 
-    // Emitted when an employee resume is viewed by an employer
-    event ResumeViewed(
-        address indexed employee, 
-        address indexed employer
-    );
-
-
-    // A resume entry representing a job experience, project, or certification.
-    struct ResumeEntry {
-        uint256 id;
-        string content;
-        Status status;
+    /**
+     * @dev Returns the total number of tokens in existence.
+     */
+    function totalSupply() public view returns (uint256) {
+        return totalSupply_;
     }
 
-    // A resume associated with an employee.
-    struct Resume {
-        address owner;
-        ResumeEntry[] entries;
-        bool exists;
+    /**
+     * @dev Gets the balance of the specified address.
+     * @param _owner The address to query the balance of.
+     * @return An uint256 representing the amount owned by the passed address.
+     */
+    function balanceOf(address _owner) public view returns (uint256) {
+        return balances[_owner];
     }
 
-    // A verification request to add a new resume statement.
-    struct VerificationRequest {
-        uint256 id;
-        address employee;
-        address employer; // The employer that will review this request.
-        string content;
-        Status status;
+    function approve(address _owner, address spender, uint256 amount) public returns (bool) {
+        allowance[_owner][spender] = amount;
+        return true;
     }
 
-    // Mapping of employee address to their resume.
-    mapping(address => Resume) public resumes;
-    // Mapping of verification request ID to the request details.
-    mapping(uint256 => VerificationRequest) public verificationRequests;
+    /**
+     * @dev Transfer tokens to a specified address.
+     * @param _to The address to transfer to.
+     * @param _value The amount to be transferred.
+     * @return True if the operation was successful.
+     */
+    function transfer(address _to, uint256 _value) public returns (bool) {
+        require(_to != address(0), "Invalid address");
+        require(_value <= balances[msg.sender], "Insufficient balance");
 
-    // Modifiers to restrict function access.
-   modifier onlyEmployer() {
-    bool isEmployer = false;
-    for (uint i = 0; i < employers.length; i++) {
-        if (msg.sender == employers[i]) {
-            isEmployer = true;
-            break;
-        }
-    }
-    require(isEmployer, "Only registered employers can call this function.");
-    _;
-}
-
-modifier onlyEmployee() {
-    bool isEmployee = false;
-    for (uint i = 0; i < employees.length; i++) {
-        if (msg.sender == employees[i]) {
-            isEmployee = true;
-            break;
-        }
-    }
-    require(isEmployee, "Only registered employees can call this function.");
-    _;
-}
-
-    /// @notice Contract constructor
-    /// @param _veriToken Address of the VERI token contract.
-    constructor(address _veriToken) {
-        veriToken = VeriToken(_veriToken);
+        balances[msg.sender] -= _value;
+        balances[_to] += _value;
+        emit Transfer(msg.sender, _to, _value);
+        return true;
     }
 
-    function addEmployer(address _newEmployer) external {
-    // To add only EmployerGovernance can call this
-    employers.push(_newEmployer);
-    emit EmployerAdded(_newEmployer, msg.sender);
+    /**
+     * @dev Transfer tokens from one address to another.
+     * @param _from The address you want to send tokens from.
+     * @param _to The address you want to transfer to.
+     * @param _value The amount of tokens to be transferred.
+     * @return True if the operation was successful.
+     */
+    function transferFrom(
+        address _from,
+        address _to,
+        uint256 _value
+    ) public returns (bool) {
+        require(_to != address(0), "Invalid address");
+        require(_value <= balances[_from], "Insufficient balance");
+        //require(_value <= allowed[_from][msg.sender], "Allowance exceeded");
+
+        balances[_from] -= _value;
+        balances[_to] += _value;
+        //allowed[_from][msg.sender] -= _value;
+        emit Transfer(_from, _to, _value);
+        return true;
     }
 
-    /// @notice Create a resume for the caller (employee).
-    /// @dev Requires the caller to pay 1 VERI token.
-    function createResume() external {
-        require(!resumes[msg.sender].exists, "Resume already exists.");
-        // Charge 1 VERI token from the employee.
-        require(veriToken.erc20Contract().transferFrom(msg.sender, address(this), 1), "Token transfer failed.");
-        employees.push(msg.sender);
-        
-        Resume storage newResume = resumes[msg.sender];
-        newResume.owner = msg.sender;
-        newResume.exists = true;
-        emit EmployeeAdded(msg.sender);
-        emit ResumeCreated(msg.sender);
+    /**
+     * @dev Function to mint tokens.
+     * @param _to The address that will receive the minted tokens.
+     * @param _amount The amount of tokens to mint.
+     * @return True if the operation was successful.
+     */
+    function mint(address _to, uint256 _amount)
+        public
+        onlyOwner
+        canMint
+        returns (bool)
+    {
+        totalSupply_ += _amount;
+        balances[_to] += _amount;
+        emit Mint(_to, _amount);
+        emit Transfer(address(0), _to, _amount);
+        return true;
     }
 
-    /// @notice Send a verification request to add a resume entry.
-    /// @param content The resume statement details (job experience, project, etc.).
-    /// @dev Employee must already have a resume and pay 1 VERI token fee.
-    function sendVerificationRequest(string memory content, address employer) external onlyEmployee {
-        require(resumes[msg.sender].exists, "You must create a resume first.");
-        // Charge 1 VERI token from the employee.
-        require(veriToken.transferVTFrom(msg.sender, address(this), 1), "Token transfer failed.");
-
-        verificationRequestCount++;
-        verificationRequests[verificationRequestCount] = VerificationRequest({
-            id: verificationRequestCount,
-            employee: msg.sender,
-            employer: employer, // Here we assume the request goes to the designated employer.
-            content: content,
-            status: Status.Pending
-        });
+    /**
+     * @dev Function to stop minting new tokens.
+     * @return True if the operation was successful.
+     */
+    function finishMinting() public onlyOwner canMint returns (bool) {
+        mintingFinished = true;
+        emit MintFinished();
+        return true;
     }
 
-    /// @notice Allows the employer to view all verification requests.
-    /// @return An array of all verification requests.
-    function viewAllVerificationRequests() external view onlyEmployer returns (VerificationRequest[] memory) {
-        VerificationRequest[] memory requests = new VerificationRequest[](verificationRequestCount);
-        for (uint256 i = 1; i <= verificationRequestCount; i++) {
-            requests[i - 1] = verificationRequests[i];
-        }
-        return requests;
+    /**
+     * @dev Burns a specific amount of tokens.
+     * @param _from The address that will burn the tokens.
+     * @param _value The amount of token to be burned.
+     */
+    function burn(address _from, uint256 _value) public onlyOwner {
+        require(_value <= balances[_from], "Insufficient balance");
+
+        totalSupply_ -= _value;
+        balances[_from] -= _value;
+        emit Burn(_from, _value);
+        emit Transfer(_from, address(0), _value);
     }
 
-    /// @notice Allows an employee or the employer to view verification requests associated with them.
-    /// @return An array of verification requests relevant to the caller.
-    function viewMyVerificationRequests() external view returns (VerificationRequest[] memory) {
-        uint256 count = 0;
-        // Count requests where the caller is either the employee who initiated or the employer.
-        for (uint256 i = 1; i <= verificationRequestCount; i++) {
-            if (verificationRequests[i].employee == msg.sender || verificationRequests[i].employer == msg.sender) {
-                count++;
-            }
-        }
-        VerificationRequest[] memory result = new VerificationRequest[](count);
-        uint256 index = 0;
-        for (uint256 i = 1; i <= verificationRequestCount; i++) {
-            if (verificationRequests[i].employee == msg.sender || verificationRequests[i].employer == msg.sender) {
-                result[index] = verificationRequests[i];
-                index++;
-            }
-        }
-        return result;
+    /**
+     * @dev Returns the owner of the contract.
+     */
+    function getOwner() public view returns (address) {
+        return owner;
     }
 
-    /// @notice Update the status of a verification request after the voting process.
-    /// @param requestId The ID of the verification request.
-    /// @param newStatus The new status (Verified or Rejected).
-    /// @dev Only callable by the governance contract.
-   function updateVerificationRequestStatus(uint256 requestId, Status newStatus) external onlyEmployer {
-    // Ensure the request exists and the caller is the specific employer for this request
-    require(requestId > 0 && requestId <= verificationRequestCount, "Invalid request id.");
-    require(msg.sender == verificationRequests[requestId].employer, "Not authorized for this verification request");
-
-    // Update the verification request status
-    verificationRequests[requestId].status = newStatus;
-
-    // If the request is verified, add the entry to the employee's resume and refund the token
-    if (newStatus == Status.Verified) {
-        // Refund 1 VERI token to the employee
-        require(veriToken.transferVTFrom(msg.sender, verificationRequests[requestId].employee, 1), "Refund failed.");
-        Resume storage userResume = resumes[verificationRequests[requestId].employee];
-        uint256 entryId = userResume.entries.length + 1;
-        
-        // Create resume entry with the verified content
-        ResumeEntry memory newEntry = ResumeEntry({
-            id: entryId,
-            content: verificationRequests[requestId].content,
-            status: Status.Verified
-        });
-        
-        // Add the entry to the resume
-        userResume.entries.push(newEntry);
-        
-        emit ResumeEntryVerified (
-            verificationRequests[requestId].employee, 
-            verificationRequests[requestId].id, 
-            msg.sender
-        );
-    }
-}
-
-    /// @notice Retrieve the caller's resume.
-    /// @return The resume structure associated with the caller.
-    function getMyResume() external view onlyEmployee returns (Resume memory) {
-        require(resumes[msg.sender].exists, "Resume does not exist.");
-        return resumes[msg.sender];
+    // Modifiers
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Caller is not the owner");
+        _;
     }
 
-    /// @notice Allow the employer to view an employee's resume.
-    /// @param employeeAddr The address of the employee whose resume is being viewed.
-    /// @return The resume structure of the specified employee.
-    /// @dev The employer must pay 1 VERI token fee.
-    function viewEmployeeResume(address employeeAddr) external onlyEmployer returns (Resume memory) {
-        require(resumes[employeeAddr].exists, "Employee resume does not exist.");
-        // Charge fee of 1 VERI token from the employer.
-        require(veriToken.transferVTFrom(msg.sender, address(this), 1), "Token transfer failed.");
-        emit ResumeViewed(employeeAddr, msg.sender);
-        return resumes[employeeAddr];
+    modifier canMint() {
+        require(!mintingFinished, "Minting is finished");
+        _;
     }
-
-    function getResumeItem(address _employee, address _employer) external view returns (ResumeEntry memory) {
-    require(resumes[_employee].exists, "Employee resume does not exist.");
-
-    // Find the resume item associated with the specific employer
-    for (uint i = 0; i < resumes[_employee].entries.length; i++) {
-        if (verificationRequests[resumes[_employee].entries[i].id].employer == _employer) {
-            return resumes[_employee].entries[i];
-        }
-    }
-    
-    revert("No resume item found for this employee and employer");
-}
 }
