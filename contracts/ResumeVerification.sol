@@ -131,7 +131,7 @@ modifier onlyEmployee() {
     function sendVerificationRequest(string memory content, address employer) external onlyEmployee {
         require(resumes[msg.sender].exists, "You must create a resume first.");
         // Charge 1 VERI token from the employee.
-        require(veriToken.transferVTFrom(msg.sender, address(this), 1), "Token transfer failed.");
+        require(veriToken.erc20Contract().transferFrom(msg.sender, address(this), 1), "Token transfer failed.");
 
         verificationRequestCount++;
         verificationRequests[verificationRequestCount] = VerificationRequest({
