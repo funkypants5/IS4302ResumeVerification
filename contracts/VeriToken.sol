@@ -49,6 +49,7 @@ contract VeriToken {
         uint256 amt
     ) public returns (bool) {
         erc20Contract.transferFrom(from, to, amt);
+        return true; // or check the return value of transferFrom if it has one
     }
 
     function changeToETH(uint256 amt) public {
