@@ -2,5 +2,23 @@
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "hardhat": "^2.22.19"
-  }
+  },
+  "name": "is4302resumeverification",
+  "version": "1.0.0",
+  "description": "to initialize repo on your local machine, run the command below in your root folder",
+  "main": "hardhat.config.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Rpkw789/IS4302ResumeVerification.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Rpkw789/IS4302ResumeVerification/issues"
+  },
+  "homepage": "https://github.com/Rpkw789/IS4302ResumeVerification#readme"
 }

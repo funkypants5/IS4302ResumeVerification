@@ -12,9 +12,8 @@ contract ERC20 {
     // Contract owner
     address public owner = msg.sender;
 
-    // Allowance mapping: owner -> spender -> amount
+     // Allowance mapping: owner -> spender -> amount
     mapping(address => mapping(address => uint256)) private allowed;
-    mapping(address => mapping(address => uint256)) public allowance;
 
     // Balance mapping
     mapping(address => uint256) private balances;
@@ -27,6 +26,7 @@ contract ERC20 {
 
     // Events
     event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
     event Mint(address indexed to, uint256 amount);
     event MintFinished();
     event Burn(address indexed from, uint256 value);
@@ -47,9 +47,26 @@ contract ERC20 {
         return balances[_owner];
     }
 
-    function approve(address _owner, address spender, uint256 amount) public returns (bool) {
-        allowance[_owner][spender] = amount;
+    /**
+     * @dev Approve the passed address to spend the specified amount of tokens on behalf of msg.sender.
+     * @param _spender The address which will spend the funds.
+     * @param _value The amount of tokens to be spent.
+     * @return True if the operation was successful.
+     */
+    function approve(address _spender, uint256 _value) public returns (bool) {
+        allowed[msg.sender][_spender] = _value;
+        emit Approval(msg.sender, _spender, _value);
         return true;
+    }
+
+    /**
+     * @dev Function to check the amount of tokens that an owner allowed to a spender.
+     * @param _owner The address which owns the funds.
+     * @param _spender The address which will spend the funds.
+     * @return A uint256 specifying the amount of tokens still available for the spender.
+     */
+    function allowance(address _owner, address _spender) public view returns (uint256) {
+        return allowed[_owner][_spender];
     }
 
     /**

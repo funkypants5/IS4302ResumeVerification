@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import "./ERC20.sol";
@@ -27,7 +28,7 @@ contract VeriToken {
     }
 
     function approveVT(address spender, uint256 amount) public returns (bool) {
-        return erc20Contract.approve(msg.sender, spender, amount);
+        return erc20Contract.approve(spender, amount);
     }
 
     // You might also want to add a function to check allowances
