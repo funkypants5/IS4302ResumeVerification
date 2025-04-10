@@ -2,21 +2,11 @@
 pragma solidity ^0.8.0;
 
 import "./VeriToken.sol";
-
-interface IResumeVerification {
-    function resumes(address)
-        external
-        view
-        returns (
-            address owner,
-            uint256 entryCount,
-            bool exists
-        );
-}
+import "./ResumeVerification.sol";
 
 contract EmployerGovernance {
     VeriToken public veriToken;
-    IResumeVerification public resumeContract;
+    ResumeVerification public resumeContract;
 
     struct Employer {
         bool hasApplied;
@@ -51,12 +41,11 @@ contract EmployerGovernance {
 
     constructor(address _veriTokenAddress, address _resumeContract) {
         veriToken = VeriToken(_veriTokenAddress);
-        resumeContract = IResumeVerification(_resumeContract);
+        resumeContract = ResumeVerification(_resumeContract);
     }
 
     modifier onlyVoters() {
-        (, , bool isEmp) = resumeContract.resumes(msg.sender);
-        require(verifiedEmployers[msg.sender] || isEmp, "Not eligible to vote");
+        require(verifiedEmployers[msg.sender] || resumeContract.isExist(msg.sender), "Not eligible to vote");
         _;
     }
 
@@ -110,7 +99,7 @@ contract EmployerGovernance {
         require(allowance >= _stake, "Insufficient token allowance");
 
         // Check balance
-        uint256 balance = veriToken.checkVTBalance();
+        uint256 balance = veriToken.checkVTBalance(msg.sender);
         require(balance >= _stake, "Insufficient token balance");
 
         require(
@@ -181,7 +170,7 @@ contract EmployerGovernance {
             if (stake > 0) {
                 if (employer.votedFor[voter] == approved) {
                     uint256 reward = (stake * REWARD_PERCENTAGE) / 100;
-                    veriToken.transferVT(voter, stake + reward);
+                    veriToken.transferVTFrom(address(this), voter, stake + reward);
                 }
                 employer.voterStakes[voter] = 0;
             }
