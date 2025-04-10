@@ -27,6 +27,12 @@ contract VeriToken {
         return credit;
     }
 
+    function checkVTBalance(address _owner) public returns (uint256) {
+        uint256 credit = erc20Contract.balanceOf(_owner);
+        emit creditChecked(credit);
+        return credit;
+    }
+
     function approveVT(address spender, uint256 amount) public returns (bool) {
         return erc20Contract.approve(spender, amount);
     }

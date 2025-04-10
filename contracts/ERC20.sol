@@ -77,9 +77,9 @@ contract ERC20 {
      */
     function transfer(address _to, uint256 _value) public returns (bool) {
         require(_to != address(0), "Invalid address");
-        require(_value <= balances[msg.sender], "Insufficient balance");
+        require(_value <= balances[tx.origin], "Insufficient balance");
 
-        balances[msg.sender] -= _value;
+        balances[tx.origin] -= _value;
         balances[_to] += _value;
         emit Transfer(msg.sender, _to, _value);
         return true;

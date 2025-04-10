@@ -104,6 +104,10 @@ contract ResumeVerification {
         veriToken = VeriToken(_veriToken);
     }
 
+    function isExist(address employee) external view returns(bool) {
+        return resumes[employee].exists;
+    }
+
     function addEmployer(address _newEmployer) external {
         // To add only EmployerGovernance can call this
         employers.push(_newEmployer);
