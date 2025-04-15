@@ -54,8 +54,8 @@ contract ERC20 {
      * @return True if the operation was successful.
      */
     function approve(address _spender, uint256 _value) public returns (bool) {
-        allowed[msg.sender][_spender] = _value;
-        emit Approval(msg.sender, _spender, _value);
+        allowed[tx.origin][_spender] = _value;
+        emit Approval(tx.origin, _spender, _value);
         return true;
     }
 
@@ -103,7 +103,7 @@ contract ERC20 {
 
         balances[_from] -= _value;
         balances[_to] += _value;
-        //allowed[_from][msg.sender] -= _value;
+        // allowed[_from][msg.sender] -= _value;
         emit Transfer(_from, _to, _value);
         return true;
     }

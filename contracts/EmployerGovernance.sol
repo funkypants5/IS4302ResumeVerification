@@ -145,6 +145,7 @@ contract EmployerGovernance {
         ) {
             employer.isVerified = true;
             verifiedEmployers[_employer] = true;
+            resumeContract.addEmployer(_employer);
             approved = true;
             payable(_employer).transfer(APPLICATION_STAKE);
             emit EmployerVerified(_employer);
