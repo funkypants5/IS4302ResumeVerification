@@ -57,7 +57,10 @@ contract ResumeVerification {
                 break;
             }
         }
-        require(isEmployer, "Only registered employers can call this function.");
+        require(
+            isEmployer,
+            "Only registered employers can call this function."
+        );
         _;
     }
 
@@ -69,7 +72,10 @@ contract ResumeVerification {
                 break;
             }
         }
-        require(isEmployee, "Only registered employees can call this function.");
+        require(
+            isEmployee,
+            "Only registered employees can call this function."
+        );
         _;
     }
 
@@ -88,7 +94,10 @@ contract ResumeVerification {
 
     function createResume() external {
         require(!resumes[msg.sender].exists, "Resume already exists.");
-        require(veriToken.transferVTFrom(msg.sender, address(this), 1), "Token transfer failed.");
+        require(
+            veriToken.transferVTFrom(msg.sender, address(this), 1),
+            "Token transfer failed."
+        );
 
         employees.push(msg.sender);
         Resume storage newResume = resumes[msg.sender];
@@ -99,9 +108,15 @@ contract ResumeVerification {
         emit ResumeCreated(msg.sender);
     }
 
-    function sendVerificationRequest(string memory content, address employer) external onlyEmployee {
+    function sendVerificationRequest(
+        string memory content,
+        address employer
+    ) external onlyEmployee {
         require(resumes[msg.sender].exists, "You must create a resume first.");
-        require(veriToken.transferVTFrom(msg.sender, address(this), 1), "Token transfer failed.");
+        require(
+            veriToken.transferVTFrom(msg.sender, address(this), 1),
+            "Token transfer failed."
+        );
 
         verificationRequestCount++;
         verificationRequests[verificationRequestCount] = VerificationRequest({
@@ -113,15 +128,26 @@ contract ResumeVerification {
         });
     }
 
-    function viewAllVerificationRequests() external view onlyEmployer returns (VerificationRequest[] memory) {
-        VerificationRequest[] memory requests = new VerificationRequest[](verificationRequestCount);
+    function viewAllVerificationRequests()
+        external
+        view
+        onlyEmployer
+        returns (VerificationRequest[] memory)
+    {
+        VerificationRequest[] memory requests = new VerificationRequest[](
+            verificationRequestCount
+        );
         for (uint256 i = 1; i <= verificationRequestCount; i++) {
             requests[i - 1] = verificationRequests[i];
         }
         return requests;
     }
 
-    function viewMyVerificationRequests() external view returns (VerificationRequest[] memory) {
+    function viewMyVerificationRequests()
+        external
+        view
+        returns (VerificationRequest[] memory)
+    {
         uint256 count = 0;
         for (uint256 i = 1; i <= verificationRequestCount; i++) {
             if (
@@ -145,15 +171,27 @@ contract ResumeVerification {
         return result;
     }
 
-    function updateVerificationRequestStatus(uint256 requestId, Status newStatus) external onlyEmployer {
-        require(requestId > 0 && requestId <= verificationRequestCount, "Invalid request id.");
+    function updateVerificationRequestStatus(
+        uint256 requestId,
+        Status newStatus
+    ) external onlyEmployer {
+        require(
+            requestId > 0 && requestId <= verificationRequestCount,
+            "Invalid request id."
+        );
         VerificationRequest storage req = verificationRequests[requestId];
-        require(msg.sender == req.employer, "Not authorized for this verification request");
+        require(
+            msg.sender == req.employer,
+            "Not authorized for this verification request"
+        );
 
         req.status = newStatus;
 
         if (newStatus == Status.Verified) {
-            require(veriToken.transferVTFrom(msg.sender, req.employee, 1), "Refund failed.");
+            require(
+                veriToken.transferVTFrom(msg.sender, req.employee, 1),
+                "Refund failed."
+            );
 
             Resume storage userResume = resumes[req.employee];
             uint256 entryId = userResume.entries.length + 1;
@@ -176,32 +214,52 @@ contract ResumeVerification {
         return resumes[msg.sender];
     }
 
-    function viewEmployeeResume(address employeeAddr) external onlyEmployer returns (Resume memory) {
-        require(resumes[employeeAddr].exists, "Employee resume does not exist.");
-        require(veriToken.transferVTFrom(msg.sender, address(this), 1), "Token transfer failed.");
+    function viewEmployeeResume(
+        address employeeAddr
+    ) external onlyEmployer returns (Resume memory) {
+        require(
+            resumes[employeeAddr].exists,
+            "Employee resume does not exist."
+        );
+        require(
+            veriToken.transferVTFrom(msg.sender, address(this), 1),
+            "Token transfer failed."
+        );
 
         emit ResumeViewed(employeeAddr, msg.sender);
         return resumes[employeeAddr];
     }
 
-    function getResumeItem(address _employee, address _employer)
-        external
-        view
-        returns (ResumeEntry memory)
-    {
+    function getResumeItems(
+        address _employee,
+        address _employer
+    ) external view returns (ResumeEntry[] memory) {
         require(resumes[_employee].exists, "Employee resume does not exist.");
         Resume storage userResume = resumes[_employee];
 
+        // Count matching entries
+        uint256 count = 0;
         for (uint256 i = 0; i < userResume.entries.length; i++) {
             uint256 reqId = userResume.entries[i].requestId;
             if (
-                reqId > 0 &&
-                verificationRequests[reqId].employer == _employer
+                reqId > 0 && verificationRequests[reqId].employer == _employer
             ) {
-                return userResume.entries[i];
+                count++;
             }
         }
 
-        revert("No resume item found for this employee and employer");
+        // Populate result array
+        ResumeEntry[] memory matchedEntries = new ResumeEntry[](count);
+        uint256 index = 0;
+        for (uint256 i = 0; i < userResume.entries.length; i++) {
+            uint256 reqId = userResume.entries[i].requestId;
+            if (
+                reqId > 0 && verificationRequests[reqId].employer == _employer
+            ) {
+                matchedEntries[index++] = userResume.entries[i];
+            }
+        }
+
+        return matchedEntries;
     }
 }
