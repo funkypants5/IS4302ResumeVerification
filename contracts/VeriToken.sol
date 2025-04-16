@@ -21,9 +21,9 @@ contract VeriToken {
         erc20Contract.mint(msg.sender, amt);
     }
 
-    function checkVTBalance() public returns (uint256) {
+    function checkVTBalance() public view returns (uint256) {
         uint256 credit = erc20Contract.balanceOf(msg.sender);
-        emit creditChecked(credit);
+        // emit creditChecked(credit);
         return credit;
     }
 
@@ -38,11 +38,10 @@ contract VeriToken {
     }
 
     // You might also want to add a function to check allowances
-    function allowanceVT(address _owner, address spender)
-        public
-        view
-        returns (uint256)
-    {
+    function allowanceVT(
+        address _owner,
+        address spender
+    ) public view returns (uint256) {
         return erc20Contract.allowance(_owner, spender);
     }
 
