@@ -16,14 +16,12 @@ contract VeriToken {
     event creditChecked(uint256 credit);
 
     function mintVT() public payable {
-        uint256 amt = msg.value / 10000000000000000; // Get VTs eligible, 1 VT = 0.01 ETH
-        // erc20Contract.transferFrom(owner, msg.sender, amt);
+        uint256 amt = msg.value / 100000000000000000; // Get VTs eligible, 1 VT = 0.01 ETH
         erc20Contract.mint(msg.sender, amt);
     }
 
     function checkVTBalance() public view returns (uint256) {
         uint256 credit = erc20Contract.balanceOf(msg.sender);
-        // emit creditChecked(credit);
         return credit;
     }
 
@@ -37,7 +35,6 @@ contract VeriToken {
         return erc20Contract.approve(spender, amount);
     }
 
-    // You might also want to add a function to check allowances
     function allowanceVT(
         address _owner,
         address spender
@@ -55,7 +52,7 @@ contract VeriToken {
         uint256 amt
     ) public returns (bool) {
         erc20Contract.transferFrom(from, to, amt);
-        return true; // or check the return value of transferFrom if it has one
+        return true;
     }
 
     function changeToETH(uint256 amt) public {

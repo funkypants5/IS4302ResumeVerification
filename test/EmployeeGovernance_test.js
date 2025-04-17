@@ -2,8 +2,8 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("Employee Governance", function () {
-  let VeriToken, ResumeVerification, EmployerGovernance;
-  let veriToken, resumeVerification, employerGovernance;
+  let VeriToken, EmployerGovernance;
+  let veriToken, employerGovernance;
   let owner, employer, employee, employee2, employee3, other;
 
   beforeEach(async () => {
@@ -22,17 +22,17 @@ describe("Employee Governance", function () {
     await veriToken.connect(employee2).mintVT({ value: ethers.parseEther("1") });
     await veriToken.connect(employee3).mintVT({ value: ethers.parseEther("1") });
 
-    // Deploy ResumeVerification with the address of VeriToken
-    ResumeVerification = await ethers.getContractFactory("ResumeVerification");
-    resumeVerification = await ResumeVerification.deploy(veriToken.target);
-    await resumeVerification.waitForDeployment();
-    console.log("ResumeVerification deployed at: " + resumeVerification.target);
-
     // Deploy EmployerGovernance with the address of VeriToken
     EmployerGovernance = await ethers.getContractFactory("EmployerGovernance");
-    employerGovernance = await EmployerGovernance.deploy(veriToken.target, resumeVerification.target);
+    employerGovernance = await EmployerGovernance.deploy(veriToken.target);
     await employerGovernance.waitForDeployment();
     console.log("EmployerGovernance deployed at: " + employerGovernance.target);
+
+    // Deploy ResumeVerification with the address of VeriToken
+    ResumeVerification = await ethers.getContractFactory("ResumeVerification");
+    resumeVerification = await ResumeVerification.deploy(veriToken.target, employerGovernance.target);
+    await resumeVerification.waitForDeployment();
+    console.log("ResumeVerification deployed at: " + resumeVerification.target);
 
     // Allow VT token to be transferred
     await veriToken.connect(employee).approveVT(employerGovernance.target, 90);
@@ -41,18 +41,18 @@ describe("Employee Governance", function () {
   });
 
   it("employer can apply for verification", async () => {
-    await employerGovernance.connect(employer).applyForVerification({ value: ethers.parseEther("0.01") });
+    await employerGovernance.connect(employer).applyForVerification({ value: ethers.parseEther("0.5") });
     expect(await employerGovernance.connect(other).isVerified(employer)).to.be.false;
   });
 
   it("voters can get a random unverified employer", async () => {
-    await employerGovernance.connect(employer).applyForVerification({ value: ethers.parseEther("0.01") });
+    await employerGovernance.connect(employer).applyForVerification({ value: ethers.parseEther("0.5") });
     const randomEmployer = await employerGovernance.connect(employee).getRandomUnverifiedEmployer();
     expect(randomEmployer).to.be.equal(employer);
   });
 
   it("voters can vote", async () => {
-    await employerGovernance.connect(employer).applyForVerification({ value: ethers.parseEther("0.01") });
+    await employerGovernance.connect(employer).applyForVerification({ value: ethers.parseEther("0.5") });
     const randomEmployer = await employerGovernance.connect(employee).getRandomUnverifiedEmployer();
 
     await resumeVerification.connect(employee).createResume();
@@ -63,7 +63,7 @@ describe("Employee Governance", function () {
   });
 
   it("vote get passed and employer gets verified", async () => {
-    await employerGovernance.connect(employer).applyForVerification({ value: ethers.parseEther("0.01") });
+    await employerGovernance.connect(employer).applyForVerification({ value: ethers.parseEther("0.5") });
     const randomEmployer = await employerGovernance.connect(employee).getRandomUnverifiedEmployer();
 
     await resumeVerification.connect(employee).createResume();
@@ -79,7 +79,7 @@ describe("Employee Governance", function () {
   });
 
   it("vote doesnt get passed and employer doesnt get verified", async () => {
-    await employerGovernance.connect(employer).applyForVerification({ value: ethers.parseEther("0.01") });
+    await employerGovernance.connect(employer).applyForVerification({ value: ethers.parseEther("0.5") });
     const randomEmployer = await employerGovernance.connect(employee).getRandomUnverifiedEmployer();
 
     await resumeVerification.connect(employee).createResume();
@@ -95,7 +95,7 @@ describe("Employee Governance", function () {
   });
 
   it("voter in favour of vote received 5% interest", async () => {
-    await employerGovernance.connect(employer).applyForVerification({ value: ethers.parseEther("0.01") });
+    await employerGovernance.connect(employer).applyForVerification({ value: ethers.parseEther("0.5") });
     const randomEmployer = await employerGovernance.connect(employee).getRandomUnverifiedEmployer();
 
     await resumeVerification.connect(employee).createResume();
@@ -118,7 +118,7 @@ describe("Employee Governance", function () {
   });
 
   it("voter not in favour of vote lost its stake", async () => {
-    await employerGovernance.connect(employer).applyForVerification({ value: ethers.parseEther("0.01") });
+    await employerGovernance.connect(employer).applyForVerification({ value: ethers.parseEther("0.5") });
     const randomEmployer = await employerGovernance.connect(employee).getRandomUnverifiedEmployer();
 
     await resumeVerification.connect(employee).createResume();

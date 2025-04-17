@@ -2,11 +2,14 @@
 pragma solidity ^0.8.0;
 
 import "./VeriToken.sol";
-import "./ResumeVerification.sol";
 
 contract EmployerGovernance {
-    VeriToken public veriToken;
-    ResumeVerification public resumeContract;
+    // Constants & Structures ----------------------- //
+    uint256 public constant APPLICATION_STAKE = 0.5 ether;
+    uint256 public constant MINIMUM_STAKE = 1000;
+    uint256 public constant VOTE_THRESHOLD_PERCENTAGE = 20;
+    uint256 public constant REWARD_PERCENTAGE = 5;
+    uint256 public constant MINIMUM_VOTERS = 15;
 
     struct Employer {
         bool hasApplied;
@@ -16,18 +19,20 @@ contract EmployerGovernance {
         uint256 stakeAgainst;
         mapping(address => uint256) voterStakes;
         mapping(address => bool) votedFor;
-        address[] voters; // Store addresses of actual voters
+        address[] voters;
     }
 
+    // Contract's Variables + Constructor -----------//
+    VeriToken public veriToken;
     mapping(address => Employer) public employerApplications;
     address[] public appliedEmployers;
     mapping(address => bool) public verifiedEmployers;
 
-    uint256 public constant APPLICATION_STAKE = 0.01 ether;
-    uint256 public constant MINIMUM_STAKE = 100;
-    uint256 public constant VOTE_THRESHOLD_PERCENTAGE = 20;
-    uint256 public constant REWARD_PERCENTAGE = 5; // 5% bonus for correct voters
+    constructor(address _veriTokenAddress) {
+        veriToken = VeriToken(_veriTokenAddress);
+    }
 
+    // Events ---------------------------------------//
     event EmployerApplied(address indexed employer);
     event EmployerVoted(
         address indexed employer,
@@ -39,20 +44,8 @@ contract EmployerGovernance {
     event EmployerRejected(address indexed employer);
     event RewardPaid(address indexed voter, uint256 amount);
 
-    constructor(address _veriTokenAddress, address _resumeContract) {
-        veriToken = VeriToken(_veriTokenAddress);
-        resumeContract = ResumeVerification(_resumeContract);
-    }
-
-    modifier onlyVoters() {
-        require(verifiedEmployers[msg.sender] || resumeContract.isExist(msg.sender), "Not eligible to vote");
-        _;
-    }
-
-    function isVerified(address employer) public view returns (bool) {
-        return verifiedEmployers[employer];
-    }
-
+    // Methods ---------------------------------------//
+    // Main Business Processes =======================//
     function applyForVerification() public payable {
         require(!verifiedEmployers[msg.sender], "Already verified");
         require(
@@ -61,16 +54,12 @@ contract EmployerGovernance {
         );
         require(
             msg.value == APPLICATION_STAKE,
-            "0.01 eth required for application"
+            "0.5 eth required for application"
         );
 
         Employer storage newEmployer = employerApplications[msg.sender];
         appliedEmployers.push(msg.sender);
-        newEmployer.isVerified = false;
         newEmployer.hasApplied = true;
-        newEmployer.totalStake = 0;
-        newEmployer.stakeFor = 0;
-        newEmployer.stakeAgainst = 0;
 
         emit EmployerApplied(msg.sender);
     }
@@ -79,7 +68,7 @@ contract EmployerGovernance {
         address _employer,
         bool _approve,
         uint256 _stake
-    ) public onlyVoters {
+    ) public {
         require(
             !employerApplications[_employer].isVerified,
             "Employer already verified"
@@ -102,6 +91,7 @@ contract EmployerGovernance {
         uint256 balance = veriToken.checkVTBalance(msg.sender);
         require(balance >= _stake, "Insufficient token balance");
 
+        // Transfer VeriToken
         require(
             veriToken.transferVTFrom(msg.sender, address(this), _stake),
             "Token transfer failed"
@@ -133,11 +123,17 @@ contract EmployerGovernance {
             return;
         }
 
+        // Ensure minimum voters is met
+        if (employer.voters.length < MINIMUM_VOTERS) {
+            return;
+        }
+
         // Calculate voting percentages
         uint256 totalStake = employer.totalStake;
         uint256 upvotePercentage = (employer.stakeFor * 100) / totalStake;
         uint256 downvotePercentage = (employer.stakeAgainst * 100) / totalStake;
 
+        // Carry out Verification Decision
         bool approved = false;
         if (
             upvotePercentage > downvotePercentage &&
@@ -145,7 +141,6 @@ contract EmployerGovernance {
         ) {
             employer.isVerified = true;
             verifiedEmployers[_employer] = true;
-            resumeContract.addEmployer(_employer);
             approved = true;
             payable(_employer).transfer(APPLICATION_STAKE);
             emit EmployerVerified(_employer);
@@ -156,6 +151,17 @@ contract EmployerGovernance {
             emit EmployerRejected(_employer);
         } else {
             return;
+        }
+
+        // Remove employer from appliedEmployers
+        for (uint256 i = 0; i < appliedEmployers.length; i++) {
+            if (appliedEmployers[i] == _employer) {
+                appliedEmployers[i] = appliedEmployers[
+                    appliedEmployers.length - 1
+                ];
+                appliedEmployers.pop();
+                break;
+            }
         }
 
         distributeRewards(_employer, approved);
@@ -171,11 +177,19 @@ contract EmployerGovernance {
             if (stake > 0) {
                 if (employer.votedFor[voter] == approved) {
                     uint256 reward = (stake * REWARD_PERCENTAGE) / 100;
-                    veriToken.transferVTFrom(address(this), voter, stake + reward);
+                    veriToken.transferVTFrom(
+                        address(this),
+                        voter,
+                        stake + reward
+                    );
                 }
-                employer.voterStakes[voter] = 0;
             }
         }
+    }
+
+    // Viewing Methods ===============================//
+    function isVerified(address employer) public view returns (bool) {
+        return verifiedEmployers[employer];
     }
 
     function getRandomUnverifiedEmployer() public view returns (address) {
