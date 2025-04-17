@@ -54,7 +54,7 @@ contract EmployerGovernance {
         );
         require(
             msg.value == APPLICATION_STAKE,
-            "0.5 eth required for application"
+            "1 eth required for application"
         );
 
         Employer storage newEmployer = employerApplications[msg.sender];
