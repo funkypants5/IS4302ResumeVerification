@@ -5,7 +5,7 @@ import "./VeriToken.sol";
 
 contract EmployerGovernance {
     // Constants & Structures ----------------------- //
-    uint256 public constant APPLICATION_STAKE = 0.5 ether;
+    uint256 public constant APPLICATION_STAKE = 1 ether;
     uint256 public constant MINIMUM_STAKE = 1000;
     uint256 public constant VOTE_THRESHOLD_PERCENTAGE = 20;
     uint256 public constant REWARD_PERCENTAGE = 5;
@@ -190,6 +190,10 @@ contract EmployerGovernance {
     // Viewing Methods ===============================//
     function isVerified(address employer) public view returns (bool) {
         return verifiedEmployers[employer];
+    }
+
+    function getAppliedEmployers() public view returns (address[] memory) {
+        return appliedEmployers;
     }
 
     function getRandomUnverifiedEmployer() public view returns (address) {

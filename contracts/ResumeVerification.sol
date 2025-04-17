@@ -49,7 +49,6 @@ contract ResumeVerification {
         uint256 indexed entryId,
         address indexed employer
     );
-    event ResumeViewed(address indexed employee, address indexed employer);
 
     // Modifiers ------------------------------------//
     modifier onlyEmployer() {
@@ -202,17 +201,11 @@ contract ResumeVerification {
 
     function viewEmployeeResume(
         address employeeAddr
-    ) external returns (Resume memory) {
+    ) external view returns (Resume memory) {
         require(
             resumes[employeeAddr].exists,
             "Employee resume does not exist."
         );
-        require(
-            veriToken.transferVTFrom(msg.sender, address(this), 1),
-            "Token transfer failed."
-        );
-
-        emit ResumeViewed(employeeAddr, msg.sender);
         return resumes[employeeAddr];
     }
 }

@@ -16,7 +16,7 @@ contract VeriToken {
     event creditChecked(uint256 credit);
 
     function mintVT() public payable {
-        uint256 amt = msg.value / 100000000000000000; // Get VTs eligible, 1 VT = 0.01 ETH
+        uint256 amt = msg.value / 1000000000000000; // Get VTs eligible, 1 VT = 0.001 ETH
         erc20Contract.mint(msg.sender, amt);
     }
 
