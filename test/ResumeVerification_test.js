@@ -2,8 +2,8 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("VeriToken and ResumeVerification Integration", function () {
-  let VeriToken, ResumeVerification;
-  let veriToken, resumeVerification;
+  let VeriToken, ResumeVerification, EmployerGovernance;
+  let veriToken, resumeVerification, employerGovernance;
   let owner, employer, employee, other;
 
   beforeEach(async () => {
@@ -13,18 +13,24 @@ describe("VeriToken and ResumeVerification Integration", function () {
     VeriToken = await ethers.getContractFactory("VeriToken");
     veriToken = await VeriToken.deploy();
     await veriToken.waitForDeployment();
-    console.log("VeriToken deployed at: " + veriToken.target);
+    // console.log("VeriToken deployed at: " + veriToken.target);
 
     // Mint some tokens for employee and employer
-    await veriToken.connect(owner).mintVT({ value: ethers.parseEther("1") }); // 100 VT
+    await veriToken.connect(owner).mintVT({ value: ethers.parseEther("1") }); // 1000 VT
     await veriToken.connect(employer).mintVT({ value: ethers.parseEther("1") });
     await veriToken.connect(employee).mintVT({ value: ethers.parseEther("1") });
 
+    // Deploy EmployerGovernance
+    EmployerGovernance = await ethers.getContractFactory("EmployerGovernance");
+    employerGovernance = await EmployerGovernance.deploy(veriToken.target);
+    await employerGovernance.waitForDeployment();
+    // console.log("EmployerGovernance deployed at: " + employerGovernance.target);
+
     // Deploy ResumeVerification with the address of VeriToken
     ResumeVerification = await ethers.getContractFactory("ResumeVerification");
-    resumeVerification = await ResumeVerification.deploy(veriToken.target);
+    resumeVerification = await ResumeVerification.deploy(veriToken.target, employerGovernance.target);
     await resumeVerification.waitForDeployment();
-    console.log("ResumeVerification deployed at: " + resumeVerification.target);
+    // console.log("ResumeVerification deployed at: " + resumeVerification.target);
   });
 
   it("should allow employer registration", async () => {
