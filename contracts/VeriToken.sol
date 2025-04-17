@@ -32,7 +32,7 @@ contract VeriToken {
     }
 
     function approveVT(address spender, uint256 amount) public returns (bool) {
-        return erc20Contract.approve(spender, amount);
+        return erc20Contract.approve(msg.sender, spender, amount);
     }
 
     function allowanceVT(
@@ -43,7 +43,7 @@ contract VeriToken {
     }
 
     function transferVT(address receipt, uint256 amt) public {
-        erc20Contract.transfer(receipt, amt);
+        erc20Contract.transferFrom(msg.sender, receipt, amt);
     }
 
     function transferVTFrom(
@@ -51,7 +51,7 @@ contract VeriToken {
         address to,
         uint256 amt
     ) public returns (bool) {
-        erc20Contract.transferFrom(from, to, amt);
+        erc20Contract.transferFromWithSpender(msg.sender, from, to, amt);
         return true;
     }
 

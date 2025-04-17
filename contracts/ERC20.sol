@@ -12,7 +12,7 @@ contract ERC20 {
     // Contract owner
     address public owner = msg.sender;
 
-     // Allowance mapping: owner -> spender -> amount
+    // Allowance mapping: owner -> spender -> amount
     mapping(address => mapping(address => uint256)) private allowed;
 
     // Balance mapping
@@ -26,7 +26,11 @@ contract ERC20 {
 
     // Events
     event Transfer(address indexed from, address indexed to, uint256 value);
-    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Approval(
+        address indexed owner,
+        address indexed spender,
+        uint256 value
+    );
     event Mint(address indexed to, uint256 amount);
     event MintFinished();
     event Burn(address indexed from, uint256 value);
@@ -53,9 +57,13 @@ contract ERC20 {
      * @param _value The amount of tokens to be spent.
      * @return True if the operation was successful.
      */
-    function approve(address _spender, uint256 _value) public returns (bool) {
-        allowed[tx.origin][_spender] = _value;
-        emit Approval(tx.origin, _spender, _value);
+    function approve(
+        address _owner,
+        address _spender,
+        uint256 _value
+    ) public returns (bool) {
+        allowed[_owner][_spender] = _value;
+        emit Approval(_owner, _spender, _value);
         return true;
     }
 
@@ -65,7 +73,10 @@ contract ERC20 {
      * @param _spender The address which will spend the funds.
      * @return A uint256 specifying the amount of tokens still available for the spender.
      */
-    function allowance(address _owner, address _spender) public view returns (uint256) {
+    function allowance(
+        address _owner,
+        address _spender
+    ) public view returns (uint256) {
         return allowed[_owner][_spender];
     }
 
@@ -75,13 +86,17 @@ contract ERC20 {
      * @param _value The amount to be transferred.
      * @return True if the operation was successful.
      */
-    function transfer(address _to, uint256 _value) public returns (bool) {
+    function transferFrom(
+        address _from,
+        address _to,
+        uint256 _value
+    ) public returns (bool) {
         require(_to != address(0), "Invalid address");
-        require(_value <= balances[tx.origin], "Insufficient balance");
+        require(_value <= balances[_from], "Insufficient balance");
 
-        balances[tx.origin] -= _value;
+        balances[_from] -= _value;
         balances[_to] += _value;
-        emit Transfer(msg.sender, _to, _value);
+        emit Transfer(_from, _to, _value);
         return true;
     }
 
@@ -92,18 +107,19 @@ contract ERC20 {
      * @param _value The amount of tokens to be transferred.
      * @return True if the operation was successful.
      */
-    function transferFrom(
+    function transferFromWithSpender(
+        address _spender,
         address _from,
         address _to,
         uint256 _value
     ) public returns (bool) {
         require(_to != address(0), "Invalid address");
         require(_value <= balances[_from], "Insufficient balance");
-        //require(_value <= allowed[_from][msg.sender], "Allowance exceeded");
+        require(_value <= allowed[_from][_spender], "Allowance exceeded");
 
         balances[_from] -= _value;
         balances[_to] += _value;
-        // allowed[_from][msg.sender] -= _value;
+        allowed[_from][_spender] -= _value;
         emit Transfer(_from, _to, _value);
         return true;
     }
@@ -114,12 +130,10 @@ contract ERC20 {
      * @param _amount The amount of tokens to mint.
      * @return True if the operation was successful.
      */
-    function mint(address _to, uint256 _amount)
-        public
-        onlyOwner
-        canMint
-        returns (bool)
-    {
+    function mint(
+        address _to,
+        uint256 _amount
+    ) public onlyOwner canMint returns (bool) {
         totalSupply_ += _amount;
         balances[_to] += _amount;
         emit Mint(_to, _amount);
