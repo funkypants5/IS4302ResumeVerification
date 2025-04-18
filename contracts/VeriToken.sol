@@ -54,13 +54,8 @@ contract VeriToken {
         address to,
         uint256 amt
     ) public returns (bool) {
-<<<<<<< HEAD
-        erc20Contract.transferFrom(from, to, amt);
-        return true; // or check the return value of transferFrom if it has one
-=======
         erc20Contract.transferFromWithSpender(msg.sender, from, to, amt);
         return true;
->>>>>>> be36f45ac8704e7f6ffe853548b28313b7aaacd0
     }
 
     function changeToETH(uint256 amt) public {
