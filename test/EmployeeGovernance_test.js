@@ -57,6 +57,7 @@ describe("Employee Governance", function () {
     await employerGovernance.connect(employer).applyForVerification({ value: ethers.parseEther("1") });
     const randomEmployer = await employerGovernance.connect(employee).getRandomUnverifiedEmployer();
 
+    await veriToken.connect(employee).approveVT(resumeVerification, 1);
     await resumeVerification.connect(employee).createResume();
     await employerGovernance.connect(employee).voteOnEmployer(randomEmployer, true, 30);
 
@@ -68,12 +69,15 @@ describe("Employee Governance", function () {
     await employerGovernance.connect(employer).applyForVerification({ value: ethers.parseEther("1") });
     const randomEmployer = await employerGovernance.connect(employee).getRandomUnverifiedEmployer();
 
+    await veriToken.connect(employee).approveVT(resumeVerification, 1);
     await resumeVerification.connect(employee).createResume();
     await employerGovernance.connect(employee).voteOnEmployer(randomEmployer, true, 67);
 
+    await veriToken.connect(employee2).approveVT(resumeVerification, 1);
     await resumeVerification.connect(employee2).createResume();
     await employerGovernance.connect(employee2).voteOnEmployer(randomEmployer, true, 67);
 
+    await veriToken.connect(employee3).approveVT(resumeVerification, 1);
     await resumeVerification.connect(employee3).createResume();
     await employerGovernance.connect(employee3).voteOnEmployer(randomEmployer, false, 67);
 
@@ -81,6 +85,7 @@ describe("Employee Governance", function () {
       const voter = others[index];
       await veriToken.connect(voter).mintVT({ value: ethers.parseEther("1") });
       await veriToken.connect(voter).approveVT(employerGovernance.target, 1000);
+      await veriToken.connect(voter).approveVT(resumeVerification, 1);
       await resumeVerification.connect(voter).createResume();
       await employerGovernance.connect(voter).voteOnEmployer(randomEmployer, true, 67);
       if (index == 11) {
@@ -97,12 +102,15 @@ describe("Employee Governance", function () {
     await employerGovernance.connect(employer).applyForVerification({ value: ethers.parseEther("1") });
     const randomEmployer = await employerGovernance.connect(employee).getRandomUnverifiedEmployer();
 
+    await veriToken.connect(employee).approveVT(resumeVerification, 1);
     await resumeVerification.connect(employee).createResume();
     await employerGovernance.connect(employee).voteOnEmployer(randomEmployer, true, 67);
 
+    await veriToken.connect(employee2).approveVT(resumeVerification, 1);
     await resumeVerification.connect(employee2).createResume();
     await employerGovernance.connect(employee2).voteOnEmployer(randomEmployer, false, 67);
 
+    await veriToken.connect(employee3).approveVT(resumeVerification, 1);
     await resumeVerification.connect(employee3).createResume();
     await employerGovernance.connect(employee3).voteOnEmployer(randomEmployer, false, 67);
 
@@ -110,6 +118,7 @@ describe("Employee Governance", function () {
       const voter = others[index];
       await veriToken.connect(voter).mintVT({ value: ethers.parseEther("1") });
       await veriToken.connect(voter).approveVT(employerGovernance.target, 1000);
+      await veriToken.connect(voter).approveVT(resumeVerification, 1);
       await resumeVerification.connect(voter).createResume();
       await employerGovernance.connect(voter).voteOnEmployer(randomEmployer, false, 67);
       if (index == 11) {
@@ -126,13 +135,16 @@ describe("Employee Governance", function () {
     await employerGovernance.connect(employer).applyForVerification({ value: ethers.parseEther("1") });
     const randomEmployer = await employerGovernance.connect(employee).getRandomUnverifiedEmployer();
 
+    await veriToken.connect(employee).approveVT(resumeVerification, 1);
     await resumeVerification.connect(employee).createResume();
     const initialBalance = await veriToken.connect(employee).checkVTBalance();
     await employerGovernance.connect(employee).voteOnEmployer(randomEmployer, true, 60);
 
+    await veriToken.connect(employee2).approveVT(resumeVerification, 1);
     await resumeVerification.connect(employee2).createResume();
     await employerGovernance.connect(employee2).voteOnEmployer(randomEmployer, true, 74);
 
+    await veriToken.connect(employee3).approveVT(resumeVerification, 1);
     await resumeVerification.connect(employee3).createResume();
     await employerGovernance.connect(employee3).voteOnEmployer(randomEmployer, false, 67);
 
@@ -140,6 +152,7 @@ describe("Employee Governance", function () {
       const voter = others[index];
       await veriToken.connect(voter).mintVT({ value: ethers.parseEther("1") });
       await veriToken.connect(voter).approveVT(employerGovernance.target, 1000);
+      await veriToken.connect(voter).approveVT(resumeVerification, 1);
       await resumeVerification.connect(voter).createResume();
       await employerGovernance.connect(voter).voteOnEmployer(randomEmployer, true, 67);
       if (index == 11) {
@@ -158,12 +171,15 @@ describe("Employee Governance", function () {
     await employerGovernance.connect(employer).applyForVerification({ value: ethers.parseEther("1") });
     const randomEmployer = await employerGovernance.connect(employee).getRandomUnverifiedEmployer();
 
+    await veriToken.connect(employee).approveVT(resumeVerification, 1);
     await resumeVerification.connect(employee).createResume();
     await employerGovernance.connect(employee).voteOnEmployer(randomEmployer, true, 60);
 
+    await veriToken.connect(employee2).approveVT(resumeVerification, 1);
     await resumeVerification.connect(employee2).createResume();
     await employerGovernance.connect(employee2).voteOnEmployer(randomEmployer, true, 74);
 
+    await veriToken.connect(employee3).approveVT(resumeVerification, 1);
     await resumeVerification.connect(employee3).createResume();
     const initialBalance = await veriToken.connect(employee3).checkVTBalance();
     await employerGovernance.connect(employee3).voteOnEmployer(randomEmployer, false, 67);
@@ -172,13 +188,13 @@ describe("Employee Governance", function () {
       const voter = others[index];
       await veriToken.connect(voter).mintVT({ value: ethers.parseEther("1") });
       await veriToken.connect(voter).approveVT(employerGovernance.target, 1000);
+      await veriToken.connect(voter).approveVT(resumeVerification, 1);
       await resumeVerification.connect(voter).createResume();
       await employerGovernance.connect(voter).voteOnEmployer(randomEmployer, true, 67);
       if (index == 11) {
         break;
       }
     }
-
     const expectedBalance = initialBalance - 67n;
 
     const finalBalance = await veriToken.connect(employee3).checkVTBalance();

@@ -177,11 +177,7 @@ contract EmployerGovernance {
             if (stake > 0) {
                 if (employer.votedFor[voter] == approved) {
                     uint256 reward = (stake * REWARD_PERCENTAGE) / 100;
-                    veriToken.transferVTFrom(
-                        address(this),
-                        voter,
-                        stake + reward
-                    );
+                    veriToken.transferVT(voter, stake + reward);
                 }
             }
         }

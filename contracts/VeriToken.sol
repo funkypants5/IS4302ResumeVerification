@@ -13,8 +13,6 @@ contract VeriToken {
         owner = msg.sender;
     }
 
-    event creditChecked(uint256 credit);
-
     function mintVT() public payable {
         uint256 amt = msg.value / 1000000000000000; // Get VTs eligible, 1 VT = 0.001 ETH
         erc20Contract.mint(msg.sender, amt);
@@ -25,25 +23,26 @@ contract VeriToken {
         return credit;
     }
 
-    function checkVTBalance(address _owner) public returns (uint256) {
+    function checkVTBalance(address _owner) public view returns (uint256) {
         uint256 credit = erc20Contract.balanceOf(_owner);
-        emit creditChecked(credit);
         return credit;
     }
 
     function approveVT(address spender, uint256 amount) public returns (bool) {
-        return erc20Contract.approve(spender, amount);
+        return erc20Contract.approve(msg.sender, spender, amount);
     }
 
-    function allowanceVT(
-        address _owner,
-        address spender
-    ) public view returns (uint256) {
+    // You might also want to add a function to check allowances
+    function allowanceVT(address _owner, address spender)
+        public
+        view
+        returns (uint256)
+    {
         return erc20Contract.allowance(_owner, spender);
     }
 
     function transferVT(address receipt, uint256 amt) public {
-        erc20Contract.transfer(receipt, amt);
+        erc20Contract.transferFrom(msg.sender, receipt, amt);
     }
 
     function transferVTFrom(
@@ -51,7 +50,7 @@ contract VeriToken {
         address to,
         uint256 amt
     ) public returns (bool) {
-        erc20Contract.transferFrom(from, to, amt);
+        erc20Contract.transferFromWithSpender(msg.sender, from, to, amt);
         return true;
     }
 
