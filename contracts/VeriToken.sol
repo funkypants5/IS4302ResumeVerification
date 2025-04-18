@@ -13,22 +13,18 @@ contract VeriToken {
         owner = msg.sender;
     }
 
-    event creditChecked(uint256 credit);
-
     function mintVT() public payable {
         uint256 amt = msg.value / 1000000000000000; // Get VTs eligible, 1 VT = 0.001 ETH
         erc20Contract.mint(msg.sender, amt);
     }
 
-    function checkVTBalance() public returns (uint256) {
+    function checkVTBalance() public view returns (uint256) {
         uint256 credit = erc20Contract.balanceOf(msg.sender);
-        emit creditChecked(credit);
         return credit;
     }
 
-    function checkVTBalance(address _owner) public returns (uint256) {
+    function checkVTBalance(address _owner) public view returns (uint256) {
         uint256 credit = erc20Contract.balanceOf(_owner);
-        emit creditChecked(credit);
         return credit;
     }
 

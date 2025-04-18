@@ -195,7 +195,6 @@ describe("Employee Governance", function () {
         break;
       }
     }
-
     const expectedBalance = initialBalance - 67n;
 
     const finalBalance = await veriToken.connect(employee3).checkVTBalance();

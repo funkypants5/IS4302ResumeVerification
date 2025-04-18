@@ -115,10 +115,6 @@ contract EmployerGovernance {
         finalizeVote(_employer);
     }
 
-    function getAppliedEmployers() public view returns (address[] memory) {
-        return appliedEmployers;
-    }
-
     function finalizeVote(address _employer) internal {
         Employer storage employer = employerApplications[_employer];
 
