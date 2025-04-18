@@ -4,10 +4,10 @@ const { ethers } = require("hardhat");
 describe("VeriToken and ResumeVerification Integration", function () {
   let VeriToken, ResumeVerification, EmployerGovernance;
   let veriToken, resumeVerification, employerGovernance;
-  let owner, employer, employee, other;
+  let owner, employer, employee, others;
 
   beforeEach(async () => {
-    [owner, employer, employee, other] = await ethers.getSigners();
+    [owner, employer, employee, ...others] = await ethers.getSigners();
 
     // Deploy VeriToken with the ERC20 instance injected
     VeriToken = await ethers.getContractFactory("VeriToken");
@@ -34,7 +34,20 @@ describe("VeriToken and ResumeVerification Integration", function () {
   });
 
   it("should allow employer registration", async () => {
-    await resumeVerification.connect(owner).addEmployer(employer.address);
+    await employerGovernance.connect(employer).applyForVerification();
+    await resumeVerification.connect(employee).createResume();
+    await employerGovernance.connect(employee).voteOnEmployer(employer, true, 67);
+
+    for (const index in others) {
+      const voter = others[index];
+      await veriToken.connect(voter).mintVT({ value: ethers.parseEther("1") });
+      await veriToken.connect(voter).approveVT(employerGovernance.target, 1000);
+      await resumeVerification.connect(voter).createResume();
+      await employerGovernance.connect(voter).voteOnEmployer(employer, true, 67);
+      if (index == 13) {
+        break;
+      }
+    }
     // No return value, so we'll assume success if no revert
   });
 
