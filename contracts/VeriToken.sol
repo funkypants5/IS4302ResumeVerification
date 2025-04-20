@@ -14,6 +14,7 @@ contract VeriToken {
     }
 
     function mintVT() public payable {
+        require(msg.value > 0, "No ethereum provided");
         uint256 amt = msg.value / 1000000000000000; // Get VTs eligible, 1 VT = 0.001 ETH
         erc20Contract.mint(msg.sender, amt);
     }
@@ -33,11 +34,10 @@ contract VeriToken {
     }
 
     // You might also want to add a function to check allowances
-    function allowanceVT(address _owner, address spender)
-        public
-        view
-        returns (uint256)
-    {
+    function allowanceVT(
+        address _owner,
+        address spender
+    ) public view returns (uint256) {
         return erc20Contract.allowance(_owner, spender);
     }
 
